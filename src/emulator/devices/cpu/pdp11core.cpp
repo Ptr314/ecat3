@@ -459,9 +459,7 @@ void pdp11core::do_trap(uint16_t vector)
     // монитора ДВК-3 читает операнды по MFPM, и тест 791403 даёт ему адрес
     // без памяти - запись в стек остановила бы процессор)
     if (has_console && halt_sel != 0 && context.halt_mode && vector == PDP11::V_BUS_ERROR) {
-        m_trap_vector = vector;
-        m_trap_pc = context.R[PDP11::REG_PC];
-        m_trap_count++;
+        note_trap(vector, context.R[PDP11::REG_PC]);
         m_abort = false;
         const uint16_t base = (uint16_t)(sel_base() | 004);
         context.R[PDP11::REG_PC] = read_word(base);
@@ -474,9 +472,7 @@ void pdp11core::do_trap(uint16_t vector)
     uint16_t old_psw = psw_word();
     uint16_t old_pc  = context.R[PDP11::REG_PC];
 
-    m_trap_vector = vector;
-    m_trap_pc = old_pc;
-    m_trap_count++;
+    note_trap(vector, old_pc);
 
     m_abort = false;
     push(old_psw);
@@ -494,9 +490,12 @@ void pdp11core::do_trap(uint16_t vector)
     m_abort = false;
 }
 
-void pdp11core::enter_halt_mode(uint16_t vector)
+void pdp11core::enter_halt_mode(uint16_t vector, bool report)
 {
-    if (vm3) { (void)vector; vm3_enter_halt(); return; }
+    if (vm3) { (void)vector; vm3_enter_halt(report); return; }
+    // Пультовый запрос (СТОП у БК, HALT) - до входа, с адресом прерванной
+    // программы: на БК он кончится ловушкой через 004, и отладчик ловит обе
+    if (report) report_halt();
     if (!context.halt_mode) snapshot_history();
     if (vm1_console) {
         // Команда HALT, запрос по nIRQ1 (клавиша СТОП у БК), START/STEP вне
@@ -557,9 +556,7 @@ void pdp11core::vm1_trap(uint16_t vector, int depth)
     const uint16_t old_psw = context.PSW;
     const uint16_t old_pc  = context.R[PDP11::REG_PC];
 
-    m_trap_vector = vector;
-    m_trap_pc = old_pc;
-    m_trap_count++;
+    note_trap(vector, old_pc);
 
     m_abort = false;
     push(old_psw);
@@ -603,9 +600,7 @@ void pdp11core::vm1_console_entry(uint16_t vector, int depth)
     snapshot_history();
     m_last_console = true;
     m_step_pending = false;
-    m_trap_vector = vector;
-    m_trap_pc = context.R[PDP11::REG_PC];
-    m_trap_count++;
+    note_trap(vector, context.R[PDP11::REG_PC]);
 
     m_abort = false;
     const uint16_t sel = read_word_checked(0177716);
@@ -1648,7 +1643,8 @@ unsigned int pdp11core::execute()
             do_trap(PDP11::V_RESERVED);
             m_last_trapped = true;
         } else {
-            enter_halt_mode(010);
+            // Арифметика, а не пультовый запрос: catch(halt) на ней не встает
+            enter_halt_mode(010, false);
         }
         return cycles;
     }

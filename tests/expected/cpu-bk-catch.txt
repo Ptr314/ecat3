@@ -1,0 +1,28 @@
+=== вектор 004 после загрузки ===
+[mapper.value16] &000004: &120234
+=== СТОП, catch(halt): пультовый запрос ===
+[cpu.caught] halt
+[cpu.caught_pc] &101114
+[cpu.pc] &120234
+[cpu.registers] R0=000000 R1=002422 R2=000400 R3=002422 R4=002377 R5=101010 SP=001746 PC=120234 PSW=000000
+=== СТОП, catch(4): та же ловушка через 004 ===
+[cpu.caught] 004
+[cpu.caught_pc] &101070
+[cpu.pc] &120234
+=== catch(4): обработчик Бейсика опрашивает 0176564 ===
+[cpu.caught] 004
+[cpu.timeout_address] &176564
+[cpu.caught_pc] &120514
+[cpu.pc] &125070
+=== ошибка шины при catch(halt): машина идет ===
+[cpu.caught] -
+[cpu.debug] &000003
+=== ошибка шины при catch(4) ===
+[cpu.caught] 004
+[cpu.caught_pc] &010010
+[cpu.registers] R0=000000 R1=002422 R2=000400 R3=002422 R4=002377 R5=101010 SP=000774 PC=120234 PSW=000000
+[mapper.value16] &000774: &010010 &000004
+=== ошибки: until без остановов, вектор 0 ===
+ERROR line 79: until without an address needs a breakpoint or a trap to catch (cpu.catch)
+ERROR line 80: Command 'catch' expects a vector or halt
+[cpu.debug] &000000

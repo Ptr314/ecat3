@@ -1073,16 +1073,20 @@ emulator::Result ScriptEngine::do_command(const ScriptCommand &c)
                 e->debug_run(true);
                 return emulator::Result::ok();
             }
+            //until without an address runs to whatever stops the machine
+            //first: a breakpoint or a trap to catch of any processor. With
+            //none of them set it would wait for ever
+            const bool to_any = (m == "until") && (p.empty() || p[0].empty());
+            if (to_any && !e->debug_has_stops())
+                return emulator::Result::error(emulator::ErrorCode::BadParameters,
+                    "until without an address needs a breakpoint or a trap to catch (cpu.catch)");
             e->debug_attach(true);
             if (m == "pause") e->debug_pause();
             else if (m == "tstep") e->debug_step(cpu, (p.empty() || p[0].empty()) ? 1 : parse_numeric_value(p[0]));
             else if (m == "over") e->debug_step_over(cpu);
             else if (m == "out") e->debug_step_out(cpu);
-            else {
-                if (p.empty() || p[0].empty())
-                    return emulator::Result::error(emulator::ErrorCode::BadParameters, "until expects an address");
-                e->debug_run_to(cpu, parse_numeric_value(p[0]));
-            }
+            else if (to_any) e->debug_run(true);
+            else e->debug_run_to(cpu, parse_numeric_value(p[0]));
             m_state = StateDebug;
             return emulator::Result::ok();
         }

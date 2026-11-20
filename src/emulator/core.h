@@ -53,6 +53,11 @@
 #define BREAK_NONE              0
 #define BREAK_POINT             1       // a breakpoint of its list
 #define BREAK_TEMP              2       // the debugger's own stop, CPU::set_temp_break()
+#define BREAK_TRAP              3       // a trap of its catch list, CPU::trap_taken()
+
+//The entry into the console (halt) mode in a catch list, CPU::add_catch():
+//above every vector a processor has
+#define CATCH_HALT              0x10000u
 
 //The debugger's own stop, see CPU::set_temp_break()
 #define TEMP_NONE               0
@@ -845,6 +850,10 @@ class CPU: public ComputerDevice
 {
 private:
     std::vector<unsigned int> m_breakpoints;
+    std::vector<unsigned int> m_catches;    //Vectors to stop on, CATCH_HALT
+    bool m_trap_hit;                //trap_taken() matched during this instruction
+    unsigned int m_caught;          //What the last stop on a trap caught, 0 - none
+    unsigned int m_caught_pc;       //Where the program it interrupted goes on
     unsigned int m_temp_mode;
     unsigned int m_temp_pc;
     unsigned int m_temp_sp;
@@ -907,6 +916,37 @@ public:
     void clear_breakpoints();
     const std::vector<unsigned int> & get_breakpoints() const { return m_breakpoints; }
 
+    //Stops on a trap or an interrupt through a vector, or on the entry into the
+    //console mode (CATCH_HALT). A processor that reports them (reports_traps())
+    //calls trap_taken() for each one it takes; in DEBUG_BRAKES a listed one
+    //stops it after the instruction, at the first command of the handler. The
+    //same room rule as the breakpoints: the window reads the list
+    static const size_t MAX_CATCHES = 16;
+    virtual bool reports_traps() const { return false; }
+    bool has_catch(unsigned int vector) const;
+    void add_catch(unsigned int vector);
+    void remove_catch(unsigned int vector);
+    void clear_catches();
+    const std::vector<unsigned int> & get_catches() const { return m_catches; }
+    //pc: where the interrupted program goes on (the return address the trap
+    //saves; for the console entry, PC when it came)
+    void trap_taken(unsigned int vector, unsigned int pc)
+    {
+        if (m_debug == DEBUG_BRAKES && !m_trap_hit && !m_catches.empty() && has_catch(vector)) {
+            m_trap_hit = true;
+            m_caught = vector;
+            m_caught_pc = pc;
+        }
+    }
+    unsigned int caught() const { return m_caught; }
+    unsigned int caught_pc() const { return m_caught_pc; }
+    void clear_caught() { m_caught = 0; m_caught_pc = 0; }
+    //A vector as the processor writes it (octal on a PDP-11), or "halt"
+    std::string catch_name(unsigned int vector) const;
+    //Anything that makes DEBUG_BRAKES worth running: a breakpoint, the
+    //debugger's own stop, a trap to catch
+    bool has_stops() const { return !m_breakpoints.empty() || m_temp_mode != TEMP_NONE || !m_catches.empty(); }
+
     //The debugger's own stop, checked with the breakpoints in DEBUG_BRAKES and
     //forgotten when it is reached: at pc (TEMP_PC); when the stack pointer is
     //back at sp or higher, after a return instruction or at pc (TEMP_RETURN:
@@ -926,7 +966,14 @@ public:
     void debug_after()
     {
         if (m_debug == DEBUG_STEP) m_debug = DEBUG_STOPPED;
-        else if (m_debug == DEBUG_BRAKES && break_test()) m_debug = DEBUG_STOPPED;
+        else if (m_debug == DEBUG_BRAKES) {
+            //A trap caught stops at the handler, whatever breakpoint is there
+            if (m_trap_hit) {
+                break_hit = BREAK_TRAP;
+                m_debug = DEBUG_STOPPED;
+            } else if (break_test()) m_debug = DEBUG_STOPPED;
+        }
+        m_trap_hit = false;
     }
     bool break_test();
     bool returned();

@@ -1,0 +1,51 @@
+# ДВК-4 (КМ1801ВМ3): останов отладчика на входе в пульт, catch(halt).
+#
+# ВМ3 входит в пульт мимо общего пути ВМ1/ВМ2 (vm3_enter_halt): по ОСТ, по HALT и при
+# двойной ошибке. Ловятся тумблер «Пульт» и команда HALT. caught_pc - куда вернется
+# программа.
+#
+# Пуск в пульте после сброса (плата держит процессор в пульте с включения) не ловится:
+# после RESET машина встает не на первой команде монитора, а на HALT, которым кончается
+# тест памяти монитора (boot-dvk4), около 10 секунд спустя.
+#
+# Программы монитор 134 пускает командой G. Перед HALT программа ждет циклом: TYPE
+# должен закончиться до останова, пауза его остановила бы.
+# @timeout 60
+MACHINE "../../tests/files/dvk4-ksm.ext"
+WAIT _12000
+LOGDEFS _16,_8
+COMMAND ram.set16(100, 001100, 000340)   // сетевой таймер -> RTI
+COMMAND ram.set16(1100, 000002)
+COMMAND ram.set16(1000, 005200, 000776)   // INC R0; BR .-2
+COMMAND ram.set16(1200, 005000, 077001, 077001, 077001, 000000, 000777)   // CLR R0; SOB R0,. x3; HALT; BR .
+
+PRINT "=== тумблер «Пульт» ==="
+TYPE "1000G"
+WAIT _500
+COMMAND cpu.catch(halt)
+COMMAND panel.option(0,1)
+COMMAND cpu.until()
+LOG cpu.caught
+LOG cpu.caught_pc
+COMMAND panel.option(0,0)
+COMMAND cpu.go()
+WAIT _300
+
+PRINT "=== HALT ==="
+TYPE "1200G"
+COMMAND cpu.until()
+LOG cpu.caught
+LOG cpu.caught_pc
+COMMAND cpu.go()
+WAIT _300
+
+PRINT "=== RESET: пуск в пульте не ловится, HALT в конце теста памяти - да ==="
+RESET
+COMMAND cpu.until()
+LOG cpu.caught
+LOG cpu.caught_pc
+COMMAND cpu.catch()
+COMMAND cpu.go()
+WAIT _500
+LOG display.text
+EXIT

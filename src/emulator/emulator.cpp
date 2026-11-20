@@ -1607,12 +1607,20 @@ void Emulator::debug_run(bool breakpoints)
     m_stepping = false;
     for (CPU * c : dm->get_cpus()) {
         c->break_hit = BREAK_NONE;
+        c->clear_caught();
         if (!breakpoints) c->clear_temp_break();
-        c->m_debug = (breakpoints && (!c->get_breakpoints().empty() || c->has_temp_break()))
-                     ? DEBUG_BRAKES : DEBUG_OFF;
+        c->m_debug = (breakpoints && c->has_stops()) ? DEBUG_BRAKES : DEBUG_OFF;
     }
     m_debug_paused = false;
     debug_notify(nullptr, DSTOP_NONE);
+}
+
+bool Emulator::debug_has_stops() const
+{
+    if (dm == nullptr) return false;
+    for (CPU * c : dm->get_cpus())
+        if (c->has_stops()) return true;
+    return false;
 }
 
 void Emulator::debug_step(CPU * c, unsigned int count)
@@ -1620,6 +1628,7 @@ void Emulator::debug_step(CPU * c, unsigned int count)
     if (c == nullptr || count == 0 || dm == nullptr) return;
     for (CPU * o : dm->get_cpus()) {
         o->break_hit = BREAK_NONE;
+        o->clear_caught();
         o->clear_temp_break();
     }
     m_debug_paused = true;
@@ -1678,7 +1687,8 @@ void Emulator::debug_run_to(CPU * c, unsigned int address)
 //mode they ran in
 void Emulator::debug_break(CPU * c)
 {
-    const int reason = (c->break_hit == BREAK_TEMP) ? DSTOP_TEMP : DSTOP_BREAKPOINT;
+    const int reason = (c->break_hit == BREAK_TEMP) ? DSTOP_TEMP
+                     : (c->break_hit == BREAK_TRAP) ? DSTOP_TRAP : DSTOP_BREAKPOINT;
     for (CPU * o : dm->get_cpus()) {
         if (o->m_debug == DEBUG_STOPPED && o->break_hit != BREAK_NONE) o->m_debug = DEBUG_BRAKES;
         o->break_hit = BREAK_NONE;

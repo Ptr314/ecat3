@@ -301,7 +301,7 @@
         <translation type="vanished">Команда &apos;set&apos; требует адрес и значение</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="+1088"/>
+        <location filename="../emulator/core.cpp" line="+1089"/>
         <source>Command &apos;set&apos; expects an address and at least one value</source>
         <translation>Команда &apos;set&apos; требует адрес и хотя бы одно значение</translation>
     </message>
@@ -709,7 +709,7 @@
         <translation type="vanished">Ошибка</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="+832"/>
+        <location filename="../emulator/core.cpp" line="+835"/>
         <source>No CPU clock value found</source>
         <translation>Не задана тактовая частота процессора</translation>
     </message>
@@ -719,21 +719,31 @@
         <translation>Диспетчер памяти не найден</translation>
     </message>
     <message>
+        <location line="+402"/>
+        <source>Command &apos;catch&apos; expects a vector or halt</source>
+        <translation>Команда &apos;catch&apos; требует вектор или halt</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Too many traps to catch</source>
+        <translation>Слишком много ловушек для останова</translation>
+    </message>
+    <message>
         <source>Command &apos;breakpoint&apos; expects an address</source>
         <translation type="vanished">Команда &apos;breakpoint&apos; требует адрес</translation>
     </message>
     <message>
-        <location line="+351"/>
+        <location line="+8"/>
         <source>Command &apos;setreg&apos; expects a name and a value</source>
         <translation>Команда &apos;setreg&apos; требует имя и значение</translation>
     </message>
     <message>
-        <location line="-367"/>
+        <location line="-430"/>
         <source>Invalid breakpoint address</source>
         <translation>Нерректная точка останова</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/cpu/k1801vm1.cpp" line="+174"/>
+        <location filename="../emulator/devices/cpu/k1801vm1.cpp" line="+181"/>
         <source>Unknown timing</source>
         <translation>Неизвестный способ расчета времени</translation>
     </message>
@@ -759,7 +769,7 @@
         <translation type="vanished">Некорректное значение для тактовой частоты %1</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="-1447"/>
+        <location filename="../emulator/core.cpp" line="-1451"/>
         <source>Incorrect interface definition for</source>
         <translation>Некорректное определение интерфейса для</translation>
     </message>
@@ -787,7 +797,7 @@
     </message>
     <message>
         <location line="+9"/>
-        <location line="+62"/>
+        <location line="+63"/>
         <location line="+4"/>
         <location filename="../emulator/devices/common/ay8910.cpp" line="-43"/>
         <location line="+36"/>
@@ -795,7 +805,8 @@
         <location filename="../emulator/devices/specific/azbk.cpp" line="+48"/>
         <location filename="../emulator/devices/specific/azbk_vga.cpp" line="+110"/>
         <location filename="../emulator/devices/specific/azbk_display.cpp" line="+34"/>
-        <location filename="../emulator/devices/specific/azbk_sound.cpp" line="+61"/>
+        <location filename="../emulator/devices/specific/azbk_sound.cpp" line="+74"/>
+        <location line="+8"/>
         <location filename="../emulator/devices/specific/azbk_disk.cpp" line="+109"/>
         <location filename="../emulator/devices/specific/azbk_sdcard.cpp" line="+681"/>
         <location filename="../emulator/devices/specific/a16m.cpp" line="+71"/>
@@ -804,7 +815,7 @@
         <translation>Неправильно указаны параметры для</translation>
     </message>
     <message>
-        <location line="-47"/>
+        <location line="-48"/>
         <location filename="../emulator/devices/common/indirect_memory.cpp" line="+62"/>
         <location filename="../emulator/devices/common/wait_map.cpp" line="+23"/>
         <source>Not a device that adds wait states</source>
@@ -816,7 +827,7 @@
         <translation>Не является устройством bus-timing</translation>
     </message>
     <message>
-        <location line="+316"/>
+        <location line="+317"/>
         <source>Command &apos;option&apos; expects an option id and a value</source>
         <translation>Команда &apos;option&apos; требует идентификатор параметра и значение</translation>
     </message>
@@ -1220,7 +1231,7 @@
 <context>
     <name>DebuggerWindow</name>
     <message>
-        <location filename="../dialogs/debugger/debuggerwindow.cpp" line="+35"/>
+        <location filename="../dialogs/debugger/debuggerwindow.cpp" line="+36"/>
         <source>Debugger</source>
         <translation>Отладчик</translation>
     </message>
@@ -1328,16 +1339,36 @@
         <translation>Снять все точки останова %1?</translation>
     </message>
     <message>
-        <location line="+21"/>
+        <location line="+17"/>
+        <source>Stop on traps</source>
+        <translation>Останавливаться на ловушках</translation>
+    </message>
+    <message>
+        <location line="+16"/>
         <source>Close</source>
         <translation>Закрыть</translation>
+    </message>
+    <message>
+        <location line="+73"/>
+        <source>Trap through 004 (STOP, HALT, bus error)</source>
+        <translation>Ловушка через 004 (СТОП, HALT, ошибка шины)</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Console request (STOP, HALT)</source>
+        <translation>Пультовый запрос (СТОП, HALT)</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Trap through %1</source>
+        <translation>Ловушка через %1</translation>
     </message>
     <message>
         <source>Another device</source>
         <translation type="vanished">Другое устройство</translation>
     </message>
     <message>
-        <location line="+111"/>
+        <location line="+76"/>
         <source>Stepping...</source>
         <translation>Шаг...</translation>
     </message>
@@ -1367,7 +1398,17 @@
         <translation>%1 не выполняет команд</translation>
     </message>
     <message>
+        <location line="+2"/>
+        <source>Console request: %1</source>
+        <translation>Пультовый запрос: %1</translation>
+    </message>
+    <message>
         <location line="+1"/>
+        <source>Trap %2: %1</source>
+        <translation>Ловушка %2: %1</translation>
+    </message>
+    <message>
+        <location line="+2"/>
         <source>Paused</source>
         <translation>Пауза</translation>
     </message>
@@ -1392,7 +1433,7 @@
         <translation type="vanished">Устройство %1 не найдено</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="-1376"/>
+        <location filename="../emulator/core.cpp" line="-1377"/>
         <source>Too many devices</source>
         <translation>Слишком много устройств</translation>
     </message>
@@ -4138,7 +4179,7 @@
 <context>
     <name>Memory</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+1036"/>
+        <location filename="../emulator/core.cpp" line="+1037"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation>Команда &apos;load&apos; требует имя файла</translation>
     </message>
@@ -4179,7 +4220,7 @@
         <translation type="vanished">Некорректный диапазон для &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+1144"/>
+        <location line="+1210"/>
         <source>Interface not found</source>
         <translation>Интерфейс не найден</translation>
     </message>
@@ -4524,7 +4565,7 @@
 <context>
     <name>Port</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-905"/>
+        <location filename="../emulator/core.cpp" line="-971"/>
         <source>Incorrect access mode</source>
         <translation>Некорректный режим доступа</translation>
     </message>
@@ -5170,7 +5211,7 @@
         <translation>Файл слишком велик для записи на кассету</translation>
     </message>
     <message>
-        <location line="+315"/>
+        <location line="+320"/>
         <location line="+635"/>
         <location line="+18"/>
         <location line="+7"/>

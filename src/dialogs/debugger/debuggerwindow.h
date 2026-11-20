@@ -13,6 +13,8 @@
 class QAction;
 class QLabel;
 class QLineEdit;
+class QMenu;
+class QToolButton;
 class QSplitter;
 class QTabWidget;
 class QTimer;
@@ -89,6 +91,9 @@ private:
     QAction * m_bp_remove;
     QAction * m_bp_toggle;
     QAction * m_bp_clear;
+    QToolButton * m_catch_button;
+    QAction * m_catch_action;       //The button's place on the toolbar
+    QMenu * m_catch_menu;
     unsigned int m_serial;
     bool m_paused;
     int m_device_tick;
@@ -107,6 +112,9 @@ private:
     //run while it is not running already
     void update_actions();
     void run_command(void (*command)(Emulator *, CPU *));
+    //The traps to stop on of the processor in front (CPU::add_catch())
+    void fill_catch_menu();
+    void toggle_catch(unsigned int vector);
     void save_layout();
     void restore_layout();
 };

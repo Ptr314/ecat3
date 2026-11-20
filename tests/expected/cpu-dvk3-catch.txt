@@ -1,0 +1,11 @@
+=== тумблер «Пульт» ===
+[cpu.caught] halt
+[cpu.caught_pc] &001002
+[cpu.pc] &144120
+=== HALT ===
+[cpu.caught] halt
+[cpu.caught_pc] &001212
+=== FADD уходит в пульт, но catch(halt) не встает ===
+[cpu.caught] -
+[cpu.debug] &000003
+[ram.value16] &002010: &002004

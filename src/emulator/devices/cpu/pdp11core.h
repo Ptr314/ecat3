@@ -73,7 +73,7 @@ protected:
     void vm3_write(uint16_t va, uint16_t value, bool byte);
     void vm3_set_psw(uint16_t value);
     void vm3_trap(uint16_t vector);
-    void vm3_enter_halt();
+    void vm3_enter_halt(bool report = true);
     void vm3_return(uint16_t pc, uint16_t psw);
     bool vm3_interrupts(unsigned int & cycles);
     void vm3_reset();
@@ -200,7 +200,7 @@ protected:
     void push(uint16_t value);
     uint16_t pop();
     void do_trap(uint16_t vector);
-    void enter_halt_mode(uint16_t vector);
+    void enter_halt_mode(uint16_t vector, bool report = true);
     // ВМ2: слово состояния с разрядом 8 - флагом пультового режима. Он у нас
     // отдельный (context.halt_mode), а на кристалле это разряд PSW: в
     // пультовом режиме его пишет загрузка PSW словом (вектор, RTI, RTT,
@@ -265,6 +265,16 @@ public:
     // регистры. Сам процессор при этом не сбрасывается
     virtual void on_bus_init() {}
 
+    // Процессор взял ловушку или прерывание через вектор, или вошёл в
+    // пультовый режим по запросу (vector = TRAP_HALT, вне 16 разрядов; равен
+    // CATCH_HALT ядра); pc - адрес, куда вернётся прерванная программа. Для
+    // останова отладчика на ловушке, CPU::trap_taken()
+    static const unsigned int TRAP_HALT = 0x10000u;
+    virtual void on_trap(unsigned int vector, uint16_t pc) { (void)vector; (void)pc; }
+    // Вход в пульт: СТОП (nIRQ1), HALT, START/STEP, двойная ошибка ВМ3. Не
+    // FIS ВМ2 и не пуск ВМ3 в пульте после сброса
+    void report_halt() { on_trap(TRAP_HALT, context.R[PDP11::REG_PC]); }
+
     // Bus access, provided by the emulator device
     // Physical addresses: 16 bits for the ВМ1 and ВМ2, 22 for the ВМ3 behind
     // its MMU, plus bit 22 for its halt mode shadow space (SEL)
@@ -318,6 +328,14 @@ public:
     uint16_t m_trap_vector = 0;
     uint16_t m_trap_pc = 0;
     unsigned int m_trap_count = 0;
+    // Every trap and interrupt taken passes here
+    void note_trap(uint16_t vector, uint16_t pc)
+    {
+        m_trap_vector = vector;
+        m_trap_pc = pc;
+        m_trap_count++;
+        on_trap(vector, pc);
+    }
 
     // Адреса последних выполненных команд, кольцом: откуда программа пришла
     // туда, где сломалась. Одна запись в массив на команду

@@ -250,9 +250,7 @@ void pdp11core::vm3_set_psw(uint16_t value)
 // этому времени уже взято из вектора)
 void pdp11core::vm3_trap(uint16_t vector)
 {
-    m_trap_vector = vector;
-    m_trap_pc = context.R[PDP11::REG_PC];
-    m_trap_count++;
+    note_trap(vector, context.R[PDP11::REG_PC]);
     context.halted = false;
     m_dest = false;
 
@@ -333,8 +331,11 @@ void pdp11core::vm3_trap(uint16_t vector)
     }
 }
 
-void pdp11core::vm3_enter_halt()
+void pdp11core::vm3_enter_halt(bool report)
 {
+    // Для отладчика: ОСТ пульта, HALT, двойная ошибка (пуск в пульте после
+    // сброса не сообщается)
+    if (report) report_halt();
     snapshot_history();
     m_step_pending = false;
     // ODT F-11 нет: PC стоит на следующей команде, как и у него
@@ -431,7 +432,7 @@ void pdp11core::vm3_reset()
     context.R[PDP11::REG_PC] = start_address;
     // Плата держит процессор в пульте, пока переключатель стоит на «пульт»:
     // монитор в теневом ПЗУ получает управление сразу
-    if (start_in_halt) vm3_enter_halt();
+    if (start_in_halt) vm3_enter_halt(false);
 }
 
 // Команды, которые у ВМ3 ведут себя иначе, чем у ВМ1 и ВМ2. true - сделано

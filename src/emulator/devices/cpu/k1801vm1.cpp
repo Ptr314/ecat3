@@ -99,6 +99,13 @@ void K1801VM1Core::on_halt_mode(bool state)
     emulator_device->set_halt_mode(state);
 }
 
+static_assert(pdp11core::TRAP_HALT == CATCH_HALT, "the core and the debugger name the console entry alike");
+
+void K1801VM1Core::on_trap(unsigned int vector, uint16_t pc)
+{
+    emulator_device->trap_taken(vector, pc);
+}
+
 // ---------------------------  Emulator device --------------------------------
 
 k1801vm1::k1801vm1(InterfaceManager *im, EmulatorConfigDevice *cd, int family_type):

@@ -9,6 +9,7 @@
 #include <QCloseEvent>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMenu>
 #include <QMessageBox>
 #include <QSplitter>
 #include <QTabWidget>
@@ -311,12 +312,24 @@ void DebuggerWindow::build_toolbar(QWidget * host)
             return;
         e->invoke([c]() {
             c->clear_breakpoints();
-            if (c->m_debug == DEBUG_BRAKES && !c->has_temp_break()) c->m_debug = DEBUG_OFF;
+            if (c->m_debug == DEBUG_BRAKES && !c->has_stops()) c->m_debug = DEBUG_OFF;
         });
         refresh_side();
         if (CpuPane * p = pane()) p->code->viewport()->update();
         update_cursor();
     });
+
+    //Traps to stop on, for a processor that reports them: the menu is made
+    //anew each time, so the ones a script has set are there too
+    m_catch_menu = new QMenu(this);
+    m_catch_button = new QToolButton(tb);
+    m_catch_button->setIcon(QIcon(":/icons/stop"));
+    m_catch_button->setToolTip(tr("Stop on traps"));
+    m_catch_button->setPopupMode(QToolButton::InstantPopup);
+    m_catch_button->setCheckable(true);
+    m_catch_button->setMenu(m_catch_menu);
+    m_catch_action = tb->addWidget(m_catch_button);
+    connect(m_catch_menu, &QMenu::aboutToShow, this, &DebuggerWindow::fill_catch_menu);
     tb->addSeparator();
 
     m_state = new QLabel(tb);
@@ -361,7 +374,7 @@ void DebuggerWindow::update_actions()
     if (running)
         for (CPU * c : e->dm->get_cpus()) {
             if (c->m_debug == DEBUG_BRAKES) watching = true;
-            if (!c->get_breakpoints().empty()) any_breakpoints = true;
+            if (!c->get_breakpoints().empty() || !c->get_catches().empty()) any_breakpoints = true;
         }
 
     m_run->setEnabled(held || (running && !watching && any_breakpoints));
@@ -381,6 +394,49 @@ void DebuggerWindow::update_actions()
     m_bp_remove->setEnabled(on);
     m_bp_toggle->setEnabled(loaded);
     m_bp_clear->setEnabled(loaded && !p->cpu->get_breakpoints().empty());
+
+    const bool traps = loaded && p->cpu->reports_traps();
+    m_catch_action->setVisible(traps);
+    m_catch_button->setChecked(traps && !p->cpu->get_catches().empty());
+}
+
+//The two traps a PDP-11 debugger wants most, then whatever else is set
+void DebuggerWindow::fill_catch_menu()
+{
+    m_catch_menu->clear();
+    CPU * c = current_cpu();
+    if (c == nullptr || !e->loaded || !c->reports_traps()) return;
+
+    auto add = [this, c](unsigned int vector, const QString &text) {
+        QAction * a = m_catch_menu->addAction(text);
+        a->setCheckable(true);
+        a->setChecked(c->has_catch(vector));
+        connect(a, &QAction::triggered, this, [this, vector]() { toggle_catch(vector); });
+    };
+    add(4, tr("Trap through 004 (STOP, HALT, bus error)"));
+    add(CATCH_HALT, tr("Console request (STOP, HALT)"));
+    const std::vector<unsigned int> set = c->get_catches();
+    for (unsigned int v : set)
+        if (v != 4 && v != CATCH_HALT)
+            add(v, tr("Trap through %1").arg(QString::fromStdString(c->catch_name(v))));
+}
+
+void DebuggerWindow::toggle_catch(unsigned int vector)
+{
+    CPU * c = current_cpu();
+    if (c == nullptr || !e->loaded) return;
+    Emulator * em = e;
+    e->invoke([c, em, vector]() {
+        if (c->has_catch(vector)) c->remove_catch(vector);
+        else c->add_catch(vector);
+        //The same as a breakpoint: a processor running without stops has to
+        //look from now on, one left with nothing to look for need not
+        if (!em->debug_paused() && c->m_debug == DEBUG_OFF && c->has_stops())
+            c->m_debug = DEBUG_BRAKES;
+        else if (c->m_debug == DEBUG_BRAKES && !c->has_stops())
+            c->m_debug = DEBUG_OFF;
+    });
+    update_actions();
 }
 
 void DebuggerWindow::run_command(void (*command)(Emulator *, CPU *))
@@ -448,6 +504,10 @@ void DebuggerWindow::show_state()
         case Emulator::DSTOP_TEMP:        text = tr("Stopped: %1").arg(who); break;
         case Emulator::DSTOP_ERROR:       text = tr("Stopped by a device error"); break;
         case Emulator::DSTOP_NO_PROGRESS: text = tr("%1 executes nothing").arg(who); break;
+        case Emulator::DSTOP_TRAP:
+            if (c != nullptr && c->caught() == CATCH_HALT) text = tr("Console request: %1").arg(who);
+            else text = tr("Trap %2: %1").arg(who, c ? QString::fromStdString(c->catch_name(c->caught())) : QString());
+            break;
         default:                          text = tr("Paused"); break;
         }
     } else {

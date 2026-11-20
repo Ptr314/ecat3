@@ -297,7 +297,7 @@
 <context>
     <name>AddressableDevice</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+1088"/>
+        <location filename="../emulator/core.cpp" line="+1089"/>
         <source>Command &apos;set&apos; expects an address and at least one value</source>
         <translation>Командата &apos;set&apos; изисква адрес и поне една стойност</translation>
     </message>
@@ -641,7 +641,7 @@
 <context>
     <name>CPU</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+832"/>
+        <location filename="../emulator/core.cpp" line="+835"/>
         <source>No CPU clock value found</source>
         <translation>Не е зададена тактова честота на процесора</translation>
     </message>
@@ -651,17 +651,27 @@
         <translation>Диспечерът на паметта не е намерен</translation>
     </message>
     <message>
-        <location line="+351"/>
+        <location line="+402"/>
+        <source>Command &apos;catch&apos; expects a vector or halt</source>
+        <translation>Командата &apos;catch&apos; очаква вектор или halt</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Too many traps to catch</source>
+        <translation>Твърде много капани за спиране</translation>
+    </message>
+    <message>
+        <location line="+8"/>
         <source>Command &apos;setreg&apos; expects a name and a value</source>
         <translation>Командата &apos;setreg&apos; изисква име и стойност</translation>
     </message>
     <message>
-        <location line="-367"/>
+        <location line="-430"/>
         <source>Invalid breakpoint address</source>
         <translation>Неправилна точка на прекъсване</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/cpu/k1801vm1.cpp" line="+174"/>
+        <location filename="../emulator/devices/cpu/k1801vm1.cpp" line="+181"/>
         <source>Unknown timing</source>
         <translation>Неизвестен начин за изчисляване на времето</translation>
     </message>
@@ -679,7 +689,7 @@
 <context>
     <name>ComputerDevice</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-1447"/>
+        <location filename="../emulator/core.cpp" line="-1451"/>
         <source>Incorrect interface definition for</source>
         <translation>Неправилна дефиниция на интерфейс за</translation>
     </message>
@@ -707,7 +717,7 @@
     </message>
     <message>
         <location line="+9"/>
-        <location line="+62"/>
+        <location line="+63"/>
         <location line="+4"/>
         <location filename="../emulator/devices/common/ay8910.cpp" line="-43"/>
         <location line="+36"/>
@@ -715,7 +725,8 @@
         <location filename="../emulator/devices/specific/azbk.cpp" line="+48"/>
         <location filename="../emulator/devices/specific/azbk_vga.cpp" line="+110"/>
         <location filename="../emulator/devices/specific/azbk_display.cpp" line="+34"/>
-        <location filename="../emulator/devices/specific/azbk_sound.cpp" line="+61"/>
+        <location filename="../emulator/devices/specific/azbk_sound.cpp" line="+74"/>
+        <location line="+8"/>
         <location filename="../emulator/devices/specific/azbk_disk.cpp" line="+109"/>
         <location filename="../emulator/devices/specific/azbk_sdcard.cpp" line="+681"/>
         <location filename="../emulator/devices/specific/a16m.cpp" line="+71"/>
@@ -724,7 +735,7 @@
         <translation>Неправилно зададени параметри за</translation>
     </message>
     <message>
-        <location line="-47"/>
+        <location line="-48"/>
         <location filename="../emulator/devices/common/indirect_memory.cpp" line="+62"/>
         <location filename="../emulator/devices/common/wait_map.cpp" line="+23"/>
         <source>Not a device that adds wait states</source>
@@ -736,7 +747,7 @@
         <translation>Не е устройство bus-timing</translation>
     </message>
     <message>
-        <location line="+316"/>
+        <location line="+317"/>
         <source>Command &apos;option&apos; expects an option id and a value</source>
         <translation>Командата &apos;option&apos; изисква идентификатор на параметъра и стойност</translation>
     </message>
@@ -1017,7 +1028,7 @@
 <context>
     <name>DebuggerWindow</name>
     <message>
-        <location filename="../dialogs/debugger/debuggerwindow.cpp" line="+35"/>
+        <location filename="../dialogs/debugger/debuggerwindow.cpp" line="+36"/>
         <source>Debugger</source>
         <translation>Дебъгер</translation>
     </message>
@@ -1125,12 +1136,32 @@
         <translation>Да се премахнат ли всички точки на прекъсване на %1?</translation>
     </message>
     <message>
-        <location line="+21"/>
+        <location line="+17"/>
+        <source>Stop on traps</source>
+        <translation>Спиране при капани</translation>
+    </message>
+    <message>
+        <location line="+16"/>
         <source>Close</source>
         <translation>Затвори</translation>
     </message>
     <message>
-        <location line="+111"/>
+        <location line="+73"/>
+        <source>Trap through 004 (STOP, HALT, bus error)</source>
+        <translation>Капан през 004 (СТОП, HALT, грешка на шината)</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Console request (STOP, HALT)</source>
+        <translation>Заявка към пулта (СТОП, HALT)</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Trap through %1</source>
+        <translation>Капан през %1</translation>
+    </message>
+    <message>
+        <location line="+76"/>
         <source>Stepping...</source>
         <translation>Стъпка...</translation>
     </message>
@@ -1160,7 +1191,17 @@
         <translation>%1 не изпълнява команди</translation>
     </message>
     <message>
+        <location line="+2"/>
+        <source>Console request: %1</source>
+        <translation>Заявка към пулта: %1</translation>
+    </message>
+    <message>
         <location line="+1"/>
+        <source>Trap %2: %1</source>
+        <translation>Капан %2: %1</translation>
+    </message>
+    <message>
+        <location line="+2"/>
         <source>Paused</source>
         <translation>Пауза</translation>
     </message>
@@ -1173,7 +1214,7 @@
 <context>
     <name>DeviceManager</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-1376"/>
+        <location filename="../emulator/core.cpp" line="-1377"/>
         <source>Too many devices</source>
         <translation>Твърде много устройства</translation>
     </message>
@@ -3574,7 +3615,7 @@
 <context>
     <name>Memory</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+1036"/>
+        <location filename="../emulator/core.cpp" line="+1037"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation>Командата &apos;load&apos; изисква име на файл</translation>
     </message>
@@ -3607,7 +3648,7 @@
 <context>
     <name>MemoryMapper</name>
     <message>
-        <location line="+1144"/>
+        <location line="+1210"/>
         <source>Interface not found</source>
         <translation>Интерфейсът не е намерен</translation>
     </message>
@@ -3944,7 +3985,7 @@
 <context>
     <name>Port</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-905"/>
+        <location filename="../emulator/core.cpp" line="-971"/>
         <source>Incorrect access mode</source>
         <translation>Невалиден режим на достъп</translation>
     </message>
@@ -4493,7 +4534,7 @@
         <translation>Файлът е твърде голям за запис на касета</translation>
     </message>
     <message>
-        <location line="+315"/>
+        <location line="+320"/>
         <location line="+635"/>
         <location line="+18"/>
         <location line="+7"/>

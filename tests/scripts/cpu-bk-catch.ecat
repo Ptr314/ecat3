@@ -1,0 +1,81 @@
+# БК0010-01: останов отладчика на ловушке (cpu.catch) и cpu.until() без адреса.
+#
+# СТОП дергает nIRQ1: процессор входит в пульт (вектор 0160002), запись 0177676 остается
+# без ответа, и вход кончается ловушкой через 004. catch(halt) ловит сам пультовый запрос,
+# catch(4) - любую ловушку через 004. Машина встает на первой команде обработчика, в
+# caught_pc - куда программа вернется.
+#
+# Обработчик СТОП Бейсика сам опрашивает 0176564 и получает от него вторую ловушку
+# через 004: catch(4) останавливается и на ней, catch(halt) - нет. Ошибка шины в своей
+# программе (запись в ПЗУ монитора) ловится только catch(4).
+#
+# KEYDOWN идет до until: KEY ждет эмулированного времени, а пауза его останавливает.
+# @timeout 30
+
+MACHINE "bk/BK-0010-01.cfg"
+WAIT _2000
+LOGDEFS _16,_8
+
+PRINT "=== вектор 004 после загрузки ==="
+LOG mapper.value16(4,6)
+
+PRINT "=== СТОП, catch(halt): пультовый запрос ==="
+COMMAND cpu.catch(halt)
+KEYDOWN key_stop
+COMMAND cpu.until()
+KEYUP key_stop
+LOG cpu.caught
+LOG cpu.caught_pc
+LOG cpu.pc
+LOG cpu.registers
+COMMAND cpu.go()
+WAIT _500
+
+PRINT "=== СТОП, catch(4): та же ловушка через 004 ==="
+COMMAND cpu.catch()
+COMMAND cpu.catch(4)
+KEYDOWN key_stop
+COMMAND cpu.until()
+KEYUP key_stop
+LOG cpu.caught
+LOG cpu.caught_pc
+LOG cpu.pc
+
+PRINT "=== catch(4): обработчик Бейсика опрашивает 0176564 ==="
+COMMAND cpu.until()
+LOG cpu.caught
+LOG cpu.timeout_address
+LOG cpu.caught_pc
+LOG cpu.pc
+COMMAND cpu.catch()
+COMMAND cpu.go()
+WAIT _500
+
+PRINT "=== ошибка шины при catch(halt): машина идет ==="
+COMMAND cpu.catch(halt)
+COMMAND cpu.pause()
+COMMAND ram.set16(10000,012706,001000)   // MOV #1000,SP
+COMMAND ram.set16(10004,005037,100000)   // CLR @#100000: запись в ПЗУ монитора
+COMMAND ram.set16(10010,000777)          // BR .
+COMMAND cpu.setreg(PC,10000)
+COMMAND cpu.go()
+WAIT _100
+LOG cpu.caught
+LOG cpu.debug
+
+PRINT "=== ошибка шины при catch(4) ==="
+COMMAND cpu.catch(4)
+COMMAND cpu.pause()
+COMMAND cpu.setreg(PC,10000)
+COMMAND cpu.until()
+LOG cpu.caught
+LOG cpu.caught_pc
+LOG cpu.registers
+LOG mapper.value16(774,777)
+
+PRINT "=== ошибки: until без остановов, вектор 0 ==="
+COMMAND cpu.catch()
+COMMAND cpu.go()
+COMMAND cpu.until()
+COMMAND cpu.catch(0)
+LOG cpu.debug

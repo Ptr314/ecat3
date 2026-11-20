@@ -1918,6 +1918,9 @@ void PortAddress::reset(MAYBE_UNUSED bool cold)
 
 CPU::CPU(InterfaceManager *im, EmulatorConfigDevice *cd):
       ComputerDevice(im, cd)
+    , m_trap_hit(false)
+    , m_caught(0)
+    , m_caught_pc(0)
     , m_temp_mode(TEMP_NONE)
     , m_temp_pc(0)
     , m_temp_sp(0)
@@ -1939,6 +1942,7 @@ CPU::CPU(InterfaceManager *im, EmulatorConfigDevice *cd):
 {
     device_class = "cpu";
     m_breakpoints.reserve(MAX_BREAKPOINTS);
+    m_catches.reserve(MAX_CATCHES);
 
     try {
         clock = parse_numeric_value(this->cd->get_parameter("clock").value);
@@ -2108,6 +2112,38 @@ void CPU::clear_breakpoints()
     m_breakpoints.clear();
 }
 
+bool CPU::has_catch(unsigned int vector) const
+{
+    for (size_t i = 0; i < m_catches.size(); i++)
+        if (m_catches[i] == vector) return true;
+    return false;
+}
+
+void CPU::add_catch(unsigned int vector)
+{
+    if (!has_catch(vector) && m_catches.size() < MAX_CATCHES) m_catches.push_back(vector);
+}
+
+void CPU::remove_catch(unsigned int vector)
+{
+    for (size_t i = 0; i < m_catches.size(); i++)
+        if (m_catches[i] == vector) {
+            m_catches.erase(m_catches.begin() + i);
+            return;
+        }
+}
+
+void CPU::clear_catches()
+{
+    m_catches.clear();
+}
+
+std::string CPU::catch_name(unsigned int vector) const
+{
+    if (vector == CATCH_HALT) return "halt";
+    return (register_radix() == 8) ? oct_str(vector, 3) : hex_str(vector, 2);
+}
+
 void CPU::set_temp_break(unsigned int mode, unsigned int pc, unsigned int sp)
 {
     m_temp_mode = mode;
@@ -2216,6 +2252,10 @@ std::vector<DeviceFieldInfo> CPU::get_device_fields()
     r.push_back({"flags",       "All flags as name=value",      false});
     r.push_back({"clock",       "CPU frequency, Hz",            false});
     r.push_back({"debug",       "Debug mode of a CPU",          false});
+    if (reports_traps()) {
+        r.push_back({"caught",      "The trap the last stop on one caught: a vector, halt, or - if none", false});
+        r.push_back({"caught_pc",   "Where the program that trap interrupted goes on", false});
+    }
     r.push_back({"hold",        "Cycles taken by bus masters since reset", false});
     r.push_back({"disasm",      "Instructions starting in an address range: disasm(from, to)", true});
     return r;
@@ -2228,6 +2268,8 @@ std::vector<DeviceCommandInfo> CPU::get_device_commands()
     r.push_back({"run",         "",                 "Resumes the execution, stopping at the breakpoints if any are set"});
     r.push_back({"step",        "",                 "Executes one command"});
     r.push_back({"breakpoint",  "[address]",        "Adds a breakpoint, without an address removes them all"});
+    if (reports_traps())
+        r.push_back({"catch",   "[vector|halt]",    "Stops at the handler of a trap or an interrupt through the vector, or on the entry into the console mode; without a parameter removes them all"});
     r.push_back({"setreg",      "name, value",      "Sets a register or a flag"});
     //Carried out by the script engine, which reaches the emulator: they move
     //the whole machine, see Emulator::debug_step()
@@ -2236,7 +2278,7 @@ std::vector<DeviceCommandInfo> CPU::get_device_commands()
     r.push_back({"tstep",       "[count]",          "Executes commands of this processor, the others running for the same time"});
     r.push_back({"over",        "",                 "Steps over a call: runs until it returns"});
     r.push_back({"out",         "",                 "Runs until the current routine returns"});
-    r.push_back({"until",       "address",          "Runs until this processor reaches the address"});
+    r.push_back({"until",       "[address]",        "Runs until this processor reaches the address; without one, until a breakpoint or a trap caught pauses the machine"});
     return r;
 }
 
@@ -2295,6 +2337,16 @@ bool CPU::get_field(const std::string &field, unsigned int from, unsigned int to
         out.values.push_back(m_debug);
         return true;
     }
+    if (field == "caught" && reports_traps()) {
+        out.text = (m_caught == 0) ? std::string("-") : catch_name(m_caught);
+        return true;
+    }
+    if (field == "caught_pc" && reports_traps()) {
+        out.numeric = true;
+        out.width = 16;
+        out.values.push_back(m_caught_pc);
+        return true;
+    }
     if (field == "disasm") {
         DisAsm * d = disasm();
         if (d == nullptr) return false;
@@ -2323,23 +2375,51 @@ emulator::Result CPU::send_command(const std::string &command, const std::string
         return emulator::Result::ok();
     }
     if (command == "run") {
-        // Breakpoints are only tested in DEBUG_BRAKES, so resuming has to keep
-        // that mode as long as at least one breakpoint is set
-        m_debug = (!m_breakpoints.empty())? DEBUG_BRAKES : DEBUG_OFF;
+        // Breakpoints and traps are only tested in DEBUG_BRAKES, so resuming
+        // has to keep that mode as long as at least one of them is set. The
+        // stop it resumes from is over
+        break_hit = BREAK_NONE;
+        clear_caught();
+        m_debug = has_stops()? DEBUG_BRAKES : DEBUG_OFF;
         return emulator::Result::ok();
     }
     if (command == "step") {
+        break_hit = BREAK_NONE;
+        clear_caught();
         m_debug = DEBUG_STEP;
         return emulator::Result::ok();
     }
     if (command == "breakpoint") {
         if (p.empty()) {
-            // No address means "forget them all" and stop watching
+            // No address means "forget them all" and stop watching, unless a
+            // trap is still to be caught
             clear_breakpoints();
-            if (m_debug == DEBUG_BRAKES) m_debug = DEBUG_OFF;
+            if (m_debug == DEBUG_BRAKES && !has_stops()) m_debug = DEBUG_OFF;
             return emulator::Result::ok();
         }
         add_breakpoint(parse_numeric_value(p[0]));
+        if (m_debug == DEBUG_OFF) m_debug = DEBUG_BRAKES;
+        return emulator::Result::ok();
+    }
+    if (command == "catch" && reports_traps()) {
+        if (p.empty() || p[0].empty()) {
+            clear_catches();
+            if (m_debug == DEBUG_BRAKES && !has_stops()) m_debug = DEBUG_OFF;
+            return emulator::Result::ok();
+        }
+        unsigned int v = 0;
+        if (str_tolower(p[0]) == "halt") v = CATCH_HALT;
+        else {
+            v = parse_numeric_value(p[0]);
+            //0 stands for "nothing caught" in the field; no processor traps through it
+            if (v == 0 || v >= CATCH_HALT)
+                return emulator::Result::error(emulator::ErrorCode::BadParameters,
+                    "{CPU|" + std::string(QT_TRANSLATE_NOOP("CPU", "Command 'catch' expects a vector or halt")) + "}");
+        }
+        if (m_catches.size() >= MAX_CATCHES && !has_catch(v))
+            return emulator::Result::error(emulator::ErrorCode::BadParameters,
+                "{CPU|" + std::string(QT_TRANSLATE_NOOP("CPU", "Too many traps to catch")) + "}");
+        add_catch(v);
         if (m_debug == DEBUG_OFF) m_debug = DEBUG_BRAKES;
         return emulator::Result::ok();
     }

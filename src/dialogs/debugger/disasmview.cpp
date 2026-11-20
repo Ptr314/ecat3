@@ -385,7 +385,7 @@ void DisasmView::toggle_breakpoint(unsigned int address)
         //left with nothing to look for need not
         if (!em->debug_paused() && c->m_debug == DEBUG_OFF && !c->get_breakpoints().empty())
             c->m_debug = DEBUG_BRAKES;
-        else if (c->m_debug == DEBUG_BRAKES && c->get_breakpoints().empty() && !c->has_temp_break())
+        else if (c->m_debug == DEBUG_BRAKES && !c->has_stops())
             c->m_debug = DEBUG_OFF;
     });
     viewport()->update();

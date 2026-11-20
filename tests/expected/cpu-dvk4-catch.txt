@@ -1,0 +1,35 @@
+=== тумблер «Пульт» ===
+[cpu.caught] halt
+[cpu.caught_pc] &001000
+=== HALT ===
+[cpu.caught] halt
+[cpu.caught_pc] &001212
+=== RESET: пуск в пульте не ловится, HALT в конце теста памяти - да ===
+[cpu.caught] halt
+[cpu.caught_pc] &001000
+[display.text] 
+                             lin  lat  wr             9600  0 0 0  0 0 0  0 0 1
+****  dostupnoe  ozu  -   1 M *
+@ 001000
+@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

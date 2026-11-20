@@ -512,7 +512,8 @@ public:
         DSTOP_BREAKPOINT,       // a breakpoint of the processor's list
         DSTOP_TEMP,             // step over, step out, run to an address
         DSTOP_ERROR,            // a device refused what the guest asked
-        DSTOP_NO_PROGRESS       // a step found the processor executing nothing (held, waiting)
+        DSTOP_NO_PROGRESS,      // a step found the processor executing nothing (held, waiting)
+        DSTOP_TRAP              // a trap of the processor's catch list, CPU::caught() tells which
     };
     void debug_attach(bool on);
     //The debugger goes: a paused machine runs on, the breakpoints are no
@@ -527,9 +528,11 @@ public:
     //its own step. Any thread
     bool debug_held() const { return m_debug_paused && !m_stepping; }
     void debug_pause();
-    //Resumes: stopping at the breakpoints and the debugger's own stop, or
-    //with all of that left aside
+    //Resumes: stopping at the breakpoints, the traps to catch and the
+    //debugger's own stop, or with all of that left aside
     void debug_run(bool breakpoints);
+    //Some processor has a stop to run into (CPU::has_stops())
+    bool debug_has_stops() const;
     void debug_step(CPU * c, unsigned int count = 1);
     //A call is stepped over, anything else is stepped
     void debug_step_over(CPU * c);

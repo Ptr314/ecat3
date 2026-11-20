@@ -21,6 +21,68 @@ namespace {
     //A runaway LOG in a loop must not eat the memory of a long session
     const size_t MAX_CAPTURED_LINES = 10000;
 
+    std::string cpu_number(const CPU * c, unsigned int v)
+    {
+        return (c->register_radix() == 8) ? oct_str(v, 6) : hex_str(v, 4);
+    }
+
+    //A processor stopped by itself on a breakpoint or a trap caught (no
+    //debugger attached, or before it came)
+    CPU * cpu_at_stop(Emulator * e)
+    {
+        if (e->dm == nullptr) return nullptr;
+        for (CPU * o : e->dm->get_cpus())
+            if (o->break_hit != BREAK_NONE) return o;
+        return nullptr;
+    }
+
+    //The machine stands because the debugger holds it or a processor ran
+    //into one of its stops - not because a CPU halted or a device failed
+    bool stop_holds(Emulator * e)
+    {
+        return e->debug_held() || cpu_at_stop(e) != nullptr;
+    }
+
+    std::string caught_text(CPU * c)
+    {
+        if (c == nullptr || c->caught() == 0) return "a trap was caught";
+        if (c->caught() == CATCH_HALT) return "the console entry (halt) was caught";
+        return "trap " + c->catch_name(c->caught()) + " was caught";
+    }
+
+    //Why the machine is held, in a line: what stopped it, on which processor,
+    //where it stands now and, for a trap, where the interrupted program goes
+    //on. Read while the machine stands, so the values stand still
+    std::string pause_reason(Emulator * e)
+    {
+        //The reason the debugger recorded holds only while it holds the
+        //machine; processors that stopped by themselves are asked instead
+        const bool held = e->debug_held();
+        CPU * c = held ? e->debug_stop_cpu() : nullptr;
+        std::string s;
+        switch (held ? e->debug_stop_reason() : (int)Emulator::DSTOP_NONE)
+        {
+        case Emulator::DSTOP_TRAP:        s = caught_text(c); break;
+        case Emulator::DSTOP_BREAKPOINT:  s = "a breakpoint"; break;
+        case Emulator::DSTOP_TEMP:        s = "the debugger's stop (until, over, out)"; break;
+        case Emulator::DSTOP_STEP:        s = "a step"; break;
+        case Emulator::DSTOP_ERROR:       s = "a device error"; break;
+        case Emulator::DSTOP_NO_PROGRESS: s = "a step that executed nothing"; break;
+        default:
+            if (c == nullptr) c = cpu_at_stop(e);
+            if (c != nullptr && c->break_hit == BREAK_TRAP) s = caught_text(c);
+            else if (c != nullptr && c->break_hit != BREAK_NONE) s = "a breakpoint";
+            else s = "a pause";
+            break;
+        }
+        if (c == nullptr) return s;
+
+        s += ", " + c->name + " at " + cpu_number(c, c->get_pc());
+        if (c->caught() != 0)
+            s += ", the interrupted program goes on at " + cpu_number(c, c->caught_pc());
+        return s;
+    }
+
     std::string trim(const std::string &s)
     {
         size_t b = 0;
@@ -351,6 +413,15 @@ McpResult McpSession::await_locked(const std::vector<std::string> &lines, size_t
                     + state + "), so this batch has not started."
                     " Call ecat_cancel to abandon it.");
             else
+            if (why.empty() && stop_holds(e))
+                //Not a halted CPU: the machine stands at a stop, which is
+                //exactly what a breakpoint or a trap caught is meant to do
+                output.push_back("[paused] The machine stands at a debugger stop (" + pause_reason(e)
+                    + "), so \"" + line + "\" cannot complete until it runs, and it blocks the calls"
+                    " after it: call ecat_cancel to drop it, then COMMAND cpu.go() resumes the machine."
+                    " Reads (LOG cpu.registers, LOG cpu.caught_pc) need no emulated time and work while"
+                    " it stands.");
+            else
                 output.push_back("[stalled] The emulated clock is not advancing, so \"" + line
                     + "\" can never complete (engine state: " + state + ")."
                     " The CPU is halted or the machine did not start: COMMAND cpu.run() restarts a"
@@ -389,6 +460,15 @@ McpResult McpSession::status()
         ss << "pc: " << s->get_pc() << "\n";
         ss << "done_pc: " << s->get_done_pc() << "\n";
         ss << "commands: " << s->size() << "\n";
+    }
+
+    if (e != nullptr && e->loaded && e->started())
+    {
+        //A long step keeps the machine paused while the emulation thread moves
+        //the processor: nothing of it is read from here then
+        if (e->debug_stepping()) ss << "paused: stepping\n";
+        else if (stop_holds(e)) ss << "paused: yes (" << pause_reason(e) << ")\n";
+        else ss << "paused: no\n";
     }
 
     ss << "clock: " << clock << "\n";

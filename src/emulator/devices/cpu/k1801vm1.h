@@ -38,6 +38,7 @@ public:
     virtual void on_halt_mode(bool state) override;
     virtual void on_virq_ack(uint16_t vector) override;
     virtual void on_bus_init() override;
+    virtual void on_trap(unsigned int vector, uint16_t pc) override;
 };
 
 // Emulator device
@@ -189,6 +190,7 @@ public:
     bool stack_address(int i, unsigned int &address) override;
     bool waiting() override;
     unsigned int register_radix() const override { return 8; }
+    bool reports_traps() const override { return true; }
     std::vector<unsigned int> get_history() override;
 };
 

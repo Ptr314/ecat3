@@ -297,7 +297,7 @@
 <context>
     <name>AddressableDevice</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+1088"/>
+        <location filename="../emulator/core.cpp" line="+1089"/>
         <source>Command &apos;set&apos; expects an address and at least one value</source>
         <translation type="unfinished"></translation>
     </message>
@@ -629,7 +629,7 @@
 <context>
     <name>CPU</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+832"/>
+        <location filename="../emulator/core.cpp" line="+835"/>
         <source>No CPU clock value found</source>
         <translation type="unfinished"></translation>
     </message>
@@ -639,17 +639,27 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+351"/>
+        <location line="+402"/>
+        <source>Command &apos;catch&apos; expects a vector or halt</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Too many traps to catch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+8"/>
         <source>Command &apos;setreg&apos; expects a name and a value</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-367"/>
+        <location line="-430"/>
         <source>Invalid breakpoint address</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/cpu/k1801vm1.cpp" line="+174"/>
+        <location filename="../emulator/devices/cpu/k1801vm1.cpp" line="+181"/>
         <source>Unknown timing</source>
         <translation type="unfinished"></translation>
     </message>
@@ -667,7 +677,7 @@
 <context>
     <name>ComputerDevice</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-1447"/>
+        <location filename="../emulator/core.cpp" line="-1451"/>
         <source>Incorrect interface definition for</source>
         <translation type="unfinished"></translation>
     </message>
@@ -695,7 +705,7 @@
     </message>
     <message>
         <location line="+9"/>
-        <location line="+62"/>
+        <location line="+63"/>
         <location line="+4"/>
         <location filename="../emulator/devices/common/ay8910.cpp" line="-43"/>
         <location line="+36"/>
@@ -703,7 +713,8 @@
         <location filename="../emulator/devices/specific/azbk.cpp" line="+48"/>
         <location filename="../emulator/devices/specific/azbk_vga.cpp" line="+110"/>
         <location filename="../emulator/devices/specific/azbk_display.cpp" line="+34"/>
-        <location filename="../emulator/devices/specific/azbk_sound.cpp" line="+61"/>
+        <location filename="../emulator/devices/specific/azbk_sound.cpp" line="+74"/>
+        <location line="+8"/>
         <location filename="../emulator/devices/specific/azbk_disk.cpp" line="+109"/>
         <location filename="../emulator/devices/specific/azbk_sdcard.cpp" line="+681"/>
         <location filename="../emulator/devices/specific/a16m.cpp" line="+71"/>
@@ -712,7 +723,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-47"/>
+        <location line="-48"/>
         <location filename="../emulator/devices/common/indirect_memory.cpp" line="+62"/>
         <location filename="../emulator/devices/common/wait_map.cpp" line="+23"/>
         <source>Not a device that adds wait states</source>
@@ -724,7 +735,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+316"/>
+        <location line="+317"/>
         <source>Command &apos;option&apos; expects an option id and a value</source>
         <translation type="unfinished"></translation>
     </message>
@@ -989,7 +1000,7 @@
 <context>
     <name>DebuggerWindow</name>
     <message>
-        <location filename="../dialogs/debugger/debuggerwindow.cpp" line="+35"/>
+        <location filename="../dialogs/debugger/debuggerwindow.cpp" line="+36"/>
         <source>Debugger</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1097,12 +1108,32 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+21"/>
+        <location line="+17"/>
+        <source>Stop on traps</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+16"/>
         <source>Close</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+111"/>
+        <location line="+73"/>
+        <source>Trap through 004 (STOP, HALT, bus error)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Console request (STOP, HALT)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Trap through %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+76"/>
         <source>Stepping...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1132,7 +1163,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location line="+2"/>
+        <source>Console request: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location line="+1"/>
+        <source>Trap %2: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
         <source>Paused</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1145,7 +1186,7 @@
 <context>
     <name>DeviceManager</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-1376"/>
+        <location filename="../emulator/core.cpp" line="-1377"/>
         <source>Too many devices</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3522,7 +3563,7 @@
 <context>
     <name>Memory</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+1036"/>
+        <location filename="../emulator/core.cpp" line="+1037"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3555,7 +3596,7 @@
 <context>
     <name>MemoryMapper</name>
     <message>
-        <location line="+1144"/>
+        <location line="+1210"/>
         <source>Interface not found</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3891,7 +3932,7 @@
 <context>
     <name>Port</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-905"/>
+        <location filename="../emulator/core.cpp" line="-971"/>
         <source>Incorrect access mode</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4440,7 +4481,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+33"/>
+        <location line="+38"/>
         <source>Unknown tape format!</source>
         <translation type="unfinished"></translation>
     </message>

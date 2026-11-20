@@ -1,0 +1,52 @@
+# ДВК-3 (КМ1801ВМ2, SEL 140001): останов отладчика на входе в пульт, catch(halt).
+#
+# У ВМ2 с SEL вход в пульт - не ловушка: состояние программы уходит в КРСК/КРСП, а
+# trap_pc остается от последнего прерывания. Адрес, куда вернется программа, дает
+# caught_pc. Ловятся тумблер «Пульт» (ОСТ на ~halt) и команда HALT, а FADD-FDIV,
+# которые у этой платы тоже уходят в пульт (арифметику делает монитор), - нет.
+#
+# Программы монитор 055 пускает командой G, как в work-dvk3-panel-halt. Перед HALT
+# программа ждет циклом: TYPE должен закончиться до останова, пауза его остановила бы.
+# @timeout 60
+MACHINE "../../tests/files/dvk3-055.ext"
+WAIT _2000
+KEY _100,_50,ret
+WAIT _300
+LOGDEFS _16,_8
+COMMAND ram.set16(100, 001100, 000340)   // сетевой таймер -> RTI
+COMMAND ram.set16(1100, 000002)
+COMMAND ram.set16(1000, 005200, 000776)   // INC R0; BR .-2
+COMMAND ram.set16(1200, 005000, 077001, 077001, 077001, 000000, 000777)   // CLR R0; SOB R0,. x3; HALT; BR .
+COMMAND ram.set16(1300, 012701, 002000, 075001, 010137, 002010, 000777)   // MOV #2000,R1; FADD R1; MOV R1,@#2010; BR .
+COMMAND ram.set16(2000, 0, 0, 0, 0, 0)
+
+PRINT "=== тумблер «Пульт» ==="
+TYPE "1000G"
+WAIT _500
+COMMAND cpu.catch(halt)
+COMMAND panel.option(0,1)
+COMMAND cpu.until()
+LOG cpu.caught
+LOG cpu.caught_pc
+LOG cpu.pc
+COMMAND panel.option(0,0)
+COMMAND cpu.catch()
+COMMAND cpu.go()
+WAIT _300
+
+PRINT "=== HALT ==="
+COMMAND cpu.catch(halt)
+TYPE "1200G"
+COMMAND cpu.until()
+LOG cpu.caught
+LOG cpu.caught_pc
+COMMAND cpu.go()
+WAIT _300
+
+PRINT "=== FADD уходит в пульт, но catch(halt) не встает ==="
+TYPE "1300G"
+WAIT _300
+LOG cpu.caught
+LOG cpu.debug
+LOG ram.value16(2010)   // R1 после FADD: 002004, монитор сделал сложение
+EXIT
